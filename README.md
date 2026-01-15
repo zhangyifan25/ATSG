@@ -6,57 +6,16 @@ This is the official repository of TGRS 2026 paper: *ATSG: Adaptive Token Linkin
 <div align="center">
 
 <br>
-  <img width="100%" alt="Framework of CTFA" src="./docs/imgs/Framework of CTFA.jpg">
+  <img width="100%" alt="Framework of CTFA" src="./doc/overall.png">
 </div>
 
 
 
 ## Data Preparations
-<details>
-<summary>
-iSAID dataset
-</summary>
 
-#### 1. Data Download
-
-You may download the iSAID dataset from their official webiste https://captain-whu.github.io/iSAID/dataset.html.
+11111
 
 
-#### 2. Data Preprocessing
-After downloading, you may craft your own dataset. Please refer to datasets/iSAID/make_data.py.
-
-</details>
-
-<details>
-
-<summary>
-ISPRS Potsdam dataset
-</summary>
-
-#### 1. Data Download
-Datasets for ISPRS Potsdam are widely accessible on the Internet. You may find the original content on: https://www.isprs.org/education/benchmarks/UrbanSemLab/default.aspx. 
-
-#### 2. Data Preprocessing
-You may refer to the datasets/potsdam/potsdam_clip_dataset.py provided by [OME](https://github.com/NJU-LHRS/OME). Great thanks for their brilliant works.
-</details>
-
-<details>
-
-<summary>
-Deepglobe Land Cover Classification Dataset
-</summary>
-
-#### 1. Data Download
-You may find the original content on:http://deepglobe.org/challenge.html. 
-
-#### 2. Data Preprocessing
-Please refer to datasets/deepglobe/deepglobe_clip_dataset.py.
-
-</details>
-
-We also provide the BaiduNetDiskDownload link for processed dataset at [Here](https://pan.baidu.com/s/1GzSzHtYr2kRr0bl2ymoKYg). Code: CTFA
-
-Checkpoints may try [this](https://pan.baidu.com/s/18wz4jmMXXNSdC_0acJsJZw). Code:r1k6 
 
 
 

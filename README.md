@@ -33,6 +33,14 @@ pip install -r requirements.txt
 
 To use the regularized loss, download and compile the python extension, see [Here](https://github.com/meng-tang/rloss/tree/master/pytorch#build-python-extension-module).
 
+## Generate boundary and target images
+
+Before training, you need to prepare the boundary and target images.
+
+```bash
+python SAMgenerate.py
+```
+
 ### Train
 Please refer to the scripts folder, where all scripts are clared by their name. You can also modify them to distributed training, which cost more GPUs. A simple startup like this:
 ```bash

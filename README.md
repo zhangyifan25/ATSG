@@ -52,9 +52,9 @@ python dist_train_postdam_seg_neg_fp.py
 python dist_train_vai_seg_neg_fp.py
 ```
 
-You should remember to change the data path to your own and make sure all setting are matched.
+## Citation
 
-I will try my best to reorganize the code to minimize issues. Apologize for any inconvenience caused by the code issues and thank you for your understanding.
+Please kindly cite our paper if you find it's helpful in your work.
 
 
 

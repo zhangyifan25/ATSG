@@ -14,8 +14,11 @@ This is the official repository of TGRS 2026 paper: *ATSG: Adaptive Token Linkin
 ## Data Preparations
 
 iSAID dataset: You may download the iSAID dataset from their official webiste https://captain-whu.github.io/iSAID/dataset.html.
+
 ISPRS Potsdam and Vaihingen datesets: You may download from their official webiste https://www.isprs.org/resources/datasets/benchmarks/UrbanSemLab
+
 The ISPRS Potsdam and Vaihingen datesets is trimmed to 256 and 256 size, iSAID dataset is trimmed to 512 and 512 size.
+
 Data processing is consistent with CTFA. Thank them [CTFA](https://github.com/ZaiyiHu/CTFA).
 
 
@@ -37,8 +40,8 @@ Please refer to the scripts folder, where all scripts are clared by their name. 
 python dist_train_iSAID_seg_neg_fp.py
 ## for potsdam
 python dist_train_postdam_seg_neg_fp.py
-## for deepglobe
-python dist_train_deepglobe_seg_neg_fp.py
+## for Vaihingen
+python dist_train_vai_seg_neg_fp.py
 ```
 
 You should remember to change the data path to your own and make sure all setting are matched.

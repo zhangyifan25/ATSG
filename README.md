@@ -6,17 +6,17 @@ This is the official repository of TGRS 2026 paper: *ATSG: Adaptive Token Linkin
 <div align="center">
 
 <br>
-  <img width="100%" alt="Framework of CTFA" src="./doc/overall.png">
+  <img width="100%" alt="Framework of ATSG" src="./doc/overall.png">
 </div>
 
 
 
 ## Data Preparations
 
-11111
-
-
-
+iSAID dataset: You may download the iSAID dataset from their official webiste https://captain-whu.github.io/iSAID/dataset.html.
+ISPRS Potsdam and Vaihingen datesets: You may download from their official webiste https://www.isprs.org/resources/datasets/benchmarks/UrbanSemLab
+The ISPRS Potsdam and Vaihingen datesets is trimmed to 256 and 256 size, iSAID dataset is trimmed to 512 and 512 size.
+Data processing is consistent with CTFA. Thank them [CTFA](https://github.com/ZaiyiHu/CTFA).
 
 
 ## Create environment
@@ -50,4 +50,4 @@ I will try my best to reorganize the code to minimize issues. Apologize for any 
 
 ## Acknowledgement
 
-Our work is built on the codebase of [SAMRS](https://github.com/sstary/SSRS) and [CTFA](https://github.com/ZaiyiHu/CTFA). We sincerely thank for their exceptional work.
+Our work is built on the codebase of [SAMRS](https://github.com/sstary/SSRS) and [ToCo](https://github.com/rulixiang/ToCo). We sincerely thank for their exceptional work.

@@ -1,0 +1,310 @@
+import numpy as np
+from numpy.lib.utils import deprecate
+import torch
+import torch.nn.functional as F
+from torch.utils.data import Dataset
+import os
+import imageio
+from . import transforms
+import torchvision
+import numpy as np
+
+import torch
+import torch.nn.functional as F
+from torch.utils.data import Dataset
+import os
+import imageio
+from . import transforms
+import torchvision
+from PIL import Image
+from torchvision import transforms as T
+import random
+def object_process(object):
+    ids = np.unique(object)
+    new_id = 1
+    for id in ids[1:]:
+        object = np.where(object == id, new_id, object)
+        new_id += 1
+    return object
+
+class_list = ["background","imp surf","building","low vegetation","tree","car"]
+#class_list = ["imp surf","building","low vegetation","tree","car"]
+
+def load_img_name_list(img_name_list_path):
+    img_name_list = np.loadtxt(img_name_list_path, dtype=str)
+    return img_name_list
+
+
+def load_cls_label_list(name_list_dir):
+    label_dict = np.load(os.path.join(name_list_dir, 'train.npy'), allow_pickle=True).item()
+    modified_dict = {}
+    for key, value in label_dict.items():
+        modified_dict[key] = value[:]  
+    return modified_dict
+
+def load_cls_label_list_val(name_list_dir):
+    label_dict = np.load(os.path.join(name_list_dir, 'val.npy'), allow_pickle=True).item()
+    modified_dict = {}
+    for key, value in label_dict.items():
+        modified_dict[key] = value[:]  
+    return modified_dict
+
+
+class potsdamDataset(Dataset):
+    def __init__(
+            self,
+            root_dir=None,
+            name_list_dir=None,
+            split='train',
+            stage='train',
+    ):
+        super().__init__()
+
+        self.root_dir = root_dir
+        self.stage = stage
+        self.img_dir = os.path.join(root_dir, 'img_dir', stage)
+        self.label_dir = os.path.join(root_dir, 'ann_dir', stage)
+        self.name_list_dir = os.path.join(name_list_dir, split + '.txt')
+        self.name_list = load_img_name_list(self.name_list_dir)
+
+        self.name_list_dir1 = os.path.join('/home/zhangyf/zhangyfcode/ATSG/datasets/potsdam/train.txt')
+        self.name_list1 = load_img_name_list(self.name_list_dir1)
+        self.obj_dir = os.path.join('/home/zhangyf/SAM/potsdam256_obj_data')
+        self.bod_dir = os.path.join('/home/zhangyf/SAM/potsdam256_bod_data')
+
+    def __len__(self):
+        return len(self.name_list)
+
+
+
+    def __getitem__(self, idx):
+
+        _img_name = self.name_list[idx]
+        _img_name = str(_img_name)
+        
+        img_name = os.path.join(self.img_dir, _img_name + '.png')
+        image = np.asarray(imageio.imread(img_name))
+
+        _img_name1 = self.name_list1[idx]
+        obj_name = os.path.join(self.obj_dir, _img_name1 + '_objects.png')
+        bod_name = os.path.join(self.bod_dir, _img_name1 + '_Boundary.png')
+        obj = np.asarray(imageio.imread(obj_name))
+        bod = np.asarray(imageio.imread(bod_name))/255
+
+        if self.stage == "train":
+
+            label_dir = os.path.join(self.label_dir,  _img_name + '.png')
+            label = np.asarray(imageio.imread(label_dir))
+
+
+        elif self.stage == "val":
+
+            label_dir = os.path.join(self.label_dir,  _img_name + '.png')
+            label = np.asarray(imageio.imread(label_dir))
+
+
+        elif self.stage == "test":
+
+            label_dir = os.path.join(self.label_dir,  _img_name + '.png')
+            label = np.asarray(imageio.imread(label_dir))
+
+
+        elif self.stage == "test.txt":
+            label = image[:, :, 0]
+
+        return _img_name, image, label,obj,bod
+
+
+class potsdamClsDataset(potsdamDataset):
+    def __init__(self,
+                 root_dir=None,
+                 name_list_dir=None,
+                 split='train',
+                 stage='train',
+                 resize_range=[512, 640],
+                 rescale_range=[0.5, 2.0],
+                 crop_size=0,
+                 img_fliplr=True,
+                 ignore_index=255,
+                 num_classes=6,
+                 aug=False,
+                 **kwargs):
+
+        super().__init__(root_dir, name_list_dir, split, stage)
+
+        self.aug = aug
+        self.ignore_index = ignore_index
+        self.resize_range = resize_range
+        self.rescale_range = rescale_range
+        self.crop_size = crop_size
+        self.local_crop_size = 96
+        self.img_fliplr = img_fliplr
+        self.num_classes = num_classes
+        # self.color_jittor = transforms.PhotoMetricDistortion()
+
+        self.gaussian_blur = transforms.GaussianBlur
+        self.solarization = transforms.Solarization(p=0.2)
+
+        self.label_list = load_cls_label_list(name_list_dir=name_list_dir)
+
+        self.normalize = T.Compose([
+            T.ToTensor(),
+            T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ])
+
+        self.flip_and_color_jitter = T.Compose([
+            T.RandomHorizontalFlip(p=0.5),
+            T.RandomApply(
+                [T.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2, hue=0.1)],
+                p=0.8
+            ),
+            T.RandomGrayscale(p=0.2),
+        ])
+
+        self.global_view1 = T.Compose([
+            # T.RandomResizedCrop(224, scale=[0.4, 1], interpolation=Image.BICUBIC),
+            self.flip_and_color_jitter,
+            self.gaussian_blur(p=1.0),
+            # self.normalize,
+        ])
+        self.global_view2 = T.Compose([
+            T.RandomResizedCrop(self.crop_size, scale=[0.4, 1], interpolation=Image.BICUBIC),
+            self.flip_and_color_jitter,
+            self.gaussian_blur(p=0.1),
+            self.solarization,
+            self.normalize,
+        ])
+        self.local_view = T.Compose([
+            # T.RandomResizedCrop(self.local_crop_size, scale=[0.4, 1], interpolation=Image.BICUBIC),
+            self.flip_and_color_jitter,
+            self.gaussian_blur(p=0.5),
+            self.normalize,
+        ])
+
+    def __len__(self):
+        return len(self.name_list)
+
+    def __transforms(self,image,obj,bod):
+        img_box = None
+        local_image = None
+        if self.aug:
+
+            if self.rescale_range:
+                image,obj,bod = transforms.random_scaling(image,obj=obj,bod=bod,scale_range=self.rescale_range)
+            if self.img_fliplr:
+                image,obj,bod = transforms.random_fliplr(image,obj=obj,bod=bod)
+            if self.crop_size:
+                image, img_box,obj,bod = transforms.random_crop(image,obj=obj,bod=bod, crop_size=self.crop_size, mean_rgb=[0, 0, 0],
+                                                        ignore_index=self.ignore_index)
+
+            local_image = self.local_view(Image.fromarray(image))
+            image = self.global_view1(Image.fromarray(image))
+
+        image = self.normalize(image)
+
+        boundary=bod
+        object=obj
+        bod = boundary.astype(np.int64)
+        obj= object.astype(np.int64)
+        obj = object_process(obj)
+        bod = torch.from_numpy(bod)  #转为tensor类型
+        obj = torch.from_numpy(obj)
+
+        return image, local_image, img_box,obj,bod
+
+    @staticmethod
+    def _to_onehot(label_mask, num_classes, ignore_index):
+        # label_onehot = F.one_hot(label, num_classes)
+
+        _label = np.unique(label_mask).astype(np.int16)
+        # exclude ignore index
+        _label = _label[_label != ignore_index]
+        # exclude background
+        _label = _label[_label != 0]
+
+        label_onehot = np.zeros(shape=(num_classes), dtype=np.uint8)
+        label_onehot[_label] = 1
+        return label_onehot
+
+    def __getitem__(self, idx):
+
+        img_name, image, nothing1,obj1,bod1 = super().__getitem__(idx)
+
+        pil_image = Image.fromarray(image)
+
+        image, local_image, img_box,obj,bod = self.__transforms(image=image,obj=obj1,bod=bod1)
+
+        cls_label = self.label_list[img_name]
+        #print(cls_label.shape)    5 
+
+        if self.aug:
+
+            crops = []
+            crops.append(image)
+            crops.append(self.global_view2(pil_image))
+            crops.append(local_image)
+            # for _ in range(8):
+            #     crops.append(self.local_view(pil_image))
+
+            return img_name, image, cls_label, img_box, crops,obj,bod
+        else:
+            return img_name, image, cls_label,obj,bod
+
+
+class potsdamSegDataset(potsdamDataset):
+    def __init__(self,
+                 root_dir=None,
+                 name_list_dir=None,
+                 split='train',
+                 stage='train',
+                 resize_range=[512, 640],
+                 rescale_range=[0.5, 2.0],
+                 crop_size=0,
+                 img_fliplr=True,
+                 ignore_index=255,
+                 aug=False,
+                 **kwargs):
+
+        super().__init__(root_dir, name_list_dir, split, stage)
+
+        self.aug = aug
+        self.ignore_index = ignore_index
+        self.resize_range = resize_range
+        self.rescale_range = rescale_range
+        self.crop_size = crop_size
+        self.img_fliplr = img_fliplr
+        self.color_jittor = transforms.PhotoMetricDistortion()
+
+        self.label_list = load_cls_label_list_val(name_list_dir=name_list_dir)
+
+    def __len__(self):
+        return len(self.name_list)
+
+    def __transforms(self, image, label):
+        if self.aug:
+     
+            if self.img_fliplr:
+                image, label = transforms.random_fliplr(image, label)
+            image = self.color_jittor(image)
+            if self.crop_size:
+                image, label = transforms.random_crop(
+                    image,
+                    label,
+                    crop_size=self.crop_size,
+                    mean_rgb=[123.675, 116.28, 103.53],
+                    ignore_index=self.ignore_index)
+    
+        image = transforms.normalize_img(image)
+        ## to chw
+        image = np.transpose(image, (2, 0, 1))
+
+        return image, label
+
+    def __getitem__(self, idx):
+        img_name, image, label,obj,bod = super().__getitem__(idx)
+
+        image, label = self.__transforms(image=image, label=label)
+
+        cls_label = self.label_list[img_name ]
+
+        return img_name, image, label, cls_label
